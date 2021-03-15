@@ -1,5 +1,8 @@
 {
-    "repeat": {
-    "tabs":["Repeat"]
-    }
+  "repeat": {
+    "tabs": ["Repeat"]
+  },
+  "pix_n_flix": {
+    "tabs": []
+  }
 }
