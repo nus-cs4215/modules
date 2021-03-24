@@ -3,8 +3,12 @@
 *~
 node_modules/
 build/*
+<<<<<<< HEAD
 /package-lock.json
 coverage/
+=======
+<<<<<<< HEAD
+>>>>>>> add rollup json and firebase
 
 # Compiled source #
 ###################
@@ -43,3 +47,7 @@ coverage/
 .Trashes
 ehthumbs.db
 Thumbs.db
+=======
+.DS_Store
+.prettierignore
+>>>>>>> add rollup json and firebase

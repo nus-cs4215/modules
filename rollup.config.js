@@ -6,6 +6,7 @@ import commonJS from 'rollup-plugin-commonjs';
 import injectProcessEnv from 'rollup-plugin-inject-process-env';
 import filesize from 'rollup-plugin-filesize';
 import copy from 'rollup-plugin-copy';
+import json from '@rollup/plugin-json';
 
 import modules from './modules.json';
 
@@ -17,6 +18,7 @@ const defaultConfigurations = {
     warn(warning);
   },
   plugins: [
+    json(),
     typescript(),
     babel({
       babelHelpers: 'bundled',
