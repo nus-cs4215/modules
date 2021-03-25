@@ -1,20 +1,48 @@
-import firebase from "firebase";
+import firebase from "firebase/app";
+import 'firebase/firestore';
 
-const firebaseConfig = {
-  apiKey: "dummy",
-  authDomain: "distributed-computing-478ce.firebaseapp.com",
-  projectId: "distributed-computing-478ce",
-  storageBucket: "distributed-computing-478ce.appspot.com",
-  messagingSenderId: "dummy",
-  appId: "dummy"
-};
-
-function share(f: Function) {
-  return f;
+// extend function to show name
+interface Function {
+  name: string;
 }
 
-function then(promise: any, f: Function) {
-  return f(promise);
+const firebaseConfig = {}; // to be filled
+
+let dbInitialized = false;
+let db;
+
+function init() {
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+  dbInitialized = true;
+}
+
+function share(f: Function) {
+  if (!dbInitialized) {
+    init();
+  }
+  return db.collection("functions").add({
+    function_name: f.name,
+    params: [],
+    run_status: false,
+    return_value: "NULL", 
+  })
+  .then((docRef) => {
+      console.log("Document written with ID: ", docRef.id);
+      return docRef.id;
+  })
+  .catch((error) => {
+      console.error("Error adding document: ", error);
+      return "Error sharing function";
+  });
+}
+
+// function then(promise: any, f: Function) {
+//   // return f(promise);
+// }
+
+function dummy() {
+  console.log("should this print before?");
 }
 
 function connect(s: string) {
@@ -27,26 +55,10 @@ function disconnect(s: string) {
   return 'Disconnected';
 }
 
-function init() {
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
-  db.collection("users").add({
-    first: "Ada",
-    last: "Lovelace",
-    born: 1815
-  })
-  .then((docRef) => {
-      console.log("Document written with ID: ", docRef.id);
-  })
-  .catch((error) => {
-      console.error("Error adding document: ", error);
-  });
-}
-
 export default function distributed_computing() {
   return {
     share,
-    then,
+    dummy,
     connect,
     disconnect,
     init,
