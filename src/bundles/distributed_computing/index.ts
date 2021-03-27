@@ -82,14 +82,42 @@ function dummy() {
   console.log("should this print before?");
 }
 
-function connect(s: string) {
-  console.log(s);
-  return 'Connection successful';
+async function connect(s: string) {
+  console.log("Connecting to db");
+  const docRef = db.collection("functions").doc(s);
+  return docRef.get();
+}
+
+async function sourceThen(promise: any) {
+  return promise.then((doc) => {
+	let data = '';
+    if (doc.exists) {
+	  console.log("Changing data");
+      data = doc.data;
+    }
+	console.log("Returning data");
+	console.log(data);
+	return data;
+  });
 }
 
 function disconnect(s: string) {
   console.log(s);
   return 'Disconnected';
+}
+
+function makeDummyPromise() {
+  return new Promise<string>((resolve, reject) => {
+	if (true) {
+	  resolve("Yalla");
+	} else {
+	  reject(Error("how"));
+	}
+  });
+}
+
+function testThen(promise: any) {
+  return promise.then(() => console.log("Now then")).catch(() => console.log("Now never"));
 }
 
 export default function distributed_computing() {
@@ -99,5 +127,8 @@ export default function distributed_computing() {
     connect,
     disconnect,
     init,
+    makeDummyPromise,
+    testThen,
+    sourceThen,
   };
 }
