@@ -1,45 +1,82 @@
 import firebase from "firebase/app";
 import 'firebase/firestore';
+// import cryptoRandomString from "crypto-random-string";
 
-// extend function to show name
-interface Function {
-  name: string;
-}
+const firebaseConfig = {};
 
-const firebaseConfig = {}; // to be filled
+// types 
+// functionToken -> local unique string to identify a particular function
+// firestoreID -> firestore document id for a particular function
+// function -> the actual function in the program
 
 let dbInitialized = false;
 let db;
+// <functionToken, function> - which function does a token map to? 
+const sharedFunctionsName = new Map();
+// <functionToken, firestoreId> - which firestore document stores a token?
+const sharedFunctionsFirestore = new Map();
+
+async function setFunctionReturnValue(firestoreId: String, returnValue: any) {
+  try {
+    const docRef = await db.collection("functions").doc(firestoreId).set({
+      return_value: returnValue
+    })
+    console.log("Return value updated for function with ID : ", docRef.id);
+    return docRef;
+  } catch(err) {
+    console.log("Error occured ", err); 
+    return err; 
+  }
+}
 
 function init() {
+  // initialise db
   firebase.initializeApp(firebaseConfig);
   db = firebase.firestore();
   dbInitialized = true;
+
+  // setup listener
+  db.collection("functions").onSnapshot((snapshot) => {
+    snapshot.docChanges().forEach((change) => {
+      if (change.type === "modified") {
+        const functionData = change.doc.data()
+        console.log("New function data: ", functionData);
+        // call respective function here
+        if (sharedFunctionsFirestore.has(functionData.function_token)) {
+           console.log("Found datachange that requires call");
+           const { args } = functionData;
+           const currentFunction = sharedFunctionsName.get(functionData.function_token);
+           console.log("Calling the function now");
+           const returnValue = currentFunction(args[0]);
+           const firestoreId = sharedFunctionsFirestore.get(functionData.function_token);
+           setFunctionReturnValue(firestoreId, returnValue);
+        }
+      }
+    })
+  })
 }
 
-function share(f: Function) {
+async function share(f: Function) {
   if (!dbInitialized) {
     init();
   }
-  return db.collection("functions").add({
-    function_name: f.name,
-    params: [],
-    run_status: false,
-    return_value: "NULL", 
-  })
-  .then((docRef) => {
-      console.log("Document written with ID: ", docRef.id);
-      return docRef.id;
-  })
-  .catch((error) => {
-      console.error("Error adding document: ", error);
-      return "Error sharing function";
-  });
+  try {
+    const functionToken = "raivat";
+    const docRef = await db.collection("functions").add({ // db must be an async function
+      function_token: functionToken, 
+      args: [],
+      run_status: false,
+      return_value: "NULL", 
+    })  
+    console.log("Document written with ID: ", docRef.id);
+    sharedFunctionsFirestore.set(functionToken, docRef.id);
+    sharedFunctionsName.set(functionToken, f);
+    return docRef.id;
+  } catch(err) {
+    console.log("Error occured ", err); 
+    return err; 
+  }
 }
-
-// function then(promise: any, f: Function) {
-//   // return f(promise);
-// }
 
 function dummy() {
   console.log("should this print before?");
