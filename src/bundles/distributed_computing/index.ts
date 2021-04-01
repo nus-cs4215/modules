@@ -1,6 +1,6 @@
 import firebase from "firebase/app";
 import 'firebase/firestore';
-// import cryptoRandomString from "crypto-random-string";
+import uuid from 'uuid-random';
 
 const firebaseConfig = {};
 
@@ -16,19 +16,25 @@ const sharedFunctionsName = new Map();
 // <functionToken, firestoreId> - which firestore document stores a token?
 const sharedFunctionsFirestore = new Map();
 
+/**
+ * Sets the return value for a shared function in firestore database.
+ * @param firestoreId the document id for the function that was just run
+ * @param returnValue the return value to be set
+ */
 async function setFunctionReturnValue(firestoreId: String, returnValue: any) {
   try {
-    const docRef = await db.collection("functions").doc(firestoreId).set({
+    await db.collection("functions").doc(firestoreId).set({
       return_value: returnValue
-    })
-    console.log("Return value updated for function with ID : ", docRef.id);
-    return docRef;
+    }, {merge: true});
+    console.log("Return value updated for function with ID : ", firestoreId);
   } catch(err) {
-    console.log("Error occured ", err); 
-    return err; 
+    console.log("Error occured ", err);
   }
 }
 
+/**
+ * Initialises the firestore DB and listens for changes in it
+ */
 function init() {
   // initialise db
   firebase.initializeApp(firebaseConfig);
@@ -56,18 +62,23 @@ function init() {
   })
 }
 
+/**
+ * Shares the given function by creating a document for the functions collection on the firestore database.
+ * @param f the function to be shared
+ * @returns a firestoreID which can be shared with a peer to connect and call the supplied function f. 
+ */
 async function share(f: Function) {
   if (!dbInitialized) {
     init();
   }
   try {
-    const functionToken = "raivat";
+    const functionToken = uuid();
     const docRef = await db.collection("functions").add({ // db must be an async function
       function_token: functionToken, 
       args: [],
       run_status: false,
       return_value: "NULL", 
-    })  
+    })
     console.log("Document written with ID: ", docRef.id);
     sharedFunctionsFirestore.set(functionToken, docRef.id);
     sharedFunctionsName.set(functionToken, f);
@@ -82,10 +93,18 @@ function dummy() {
   console.log("should this print before?");
 }
 
-async function connect(s: string) {
+async function connect(functionToken: string) {
+  if (!dbInitialized) {
+    init();
+  }
   console.log("Connecting to db");
-  const docRef = db.collection("functions").doc(s);
-  return docRef.get();
+  try {
+    const docRef = await db.collection("functions").doc(functionToken);
+    return docRef.get();
+  } catch(err) {
+    console.log("Error occured ", err); 
+    return err; 
+  }
 }
 
 async function sourceThen(promise: any) {
