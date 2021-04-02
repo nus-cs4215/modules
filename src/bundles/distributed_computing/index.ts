@@ -99,8 +99,10 @@ async function connect(functionToken: string) {
   }
   console.log("Connecting to db");
   try {
-    const docRef = await db.collection("functions").doc(functionToken);
-    return docRef.get();
+    const docRef = db.collection("functions").doc(functionToken);
+    const doc = await docRef.get();
+    console.log("Data from executing connect: ", doc.data());
+    return doc.data();
   } catch(err) {
     console.log("Error occured ", err); 
     return err; 
