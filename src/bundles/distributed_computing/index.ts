@@ -78,6 +78,7 @@ async function share(f: Function) {
       args: [],
       run_status: false,
       return_value: "NULL", 
+      num_params: f.length,
     })
     console.log("Document written with ID: ", docRef.id);
     sharedFunctionsFirestore.set(functionToken, docRef.id);
@@ -91,6 +92,25 @@ async function share(f: Function) {
 
 function dummy() {
   console.log("should this print before?");
+}
+
+async function getParams(functionToken: string) {
+  try {
+    const docRef = await db.collection("functions").doc(functionToken).get();
+    return docRef.num_params;
+  } catch(err) {
+    return err;
+  }
+}
+
+async function getNumberOfParameters(functionToken: string) {
+  if (!dbInitialized) {
+    init();
+  }
+  
+  let result = 0;
+  await getParams(functionToken).then((x) => {result = x;});
+  return result;
 }
 
 async function connect(functionToken: string) {
@@ -109,17 +129,8 @@ async function connect(functionToken: string) {
   }
 }
 
-async function sourceThen(promise: any) {
-  return promise.then((doc) => {
-	let data = '';
-    if (doc.exists) {
-	  console.log("Changing data");
-      data = doc.data;
-    }
-	console.log("Returning data");
-	console.log(data);
-	return data;
-  });
+async function sourceThen(promise: any, onResolve: Function) {
+  return promise.then(onResolve);
 }
 
 function disconnect(s: string) {
@@ -151,5 +162,6 @@ export default function distributed_computing() {
     makeDummyPromise,
     testThen,
     sourceThen,
+    getNumberOfParameters
   };
 }
