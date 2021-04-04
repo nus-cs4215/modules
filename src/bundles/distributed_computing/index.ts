@@ -94,6 +94,10 @@ function dummy() {
   console.log("should this print before?");
 }
 
+function createPromise(func) {
+  return new Promise(func);
+}
+
 async function getParams(functionToken: string) {
   try {
     const docRef = await db.collection("functions").doc(functionToken).get();
@@ -107,19 +111,24 @@ async function getNumberOfParameters(functionToken: string) {
   if (!dbInitialized) {
     init();
   }
-  
   let result = 0;
   await getParams(functionToken).then((x) => {result = x;});
   return result;
 }
 
-async function connect(functionToken: string) {
+
+/**
+ * Connects to given firestoreId and retrieves
+ * @param firestoreId
+ * @returns a promise object that can only be handled using then
+ */
+async function connect(firestoreId: string) {
   if (!dbInitialized) {
     init();
   }
   console.log("Connecting to db");
   try {
-    const docRef = db.collection("functions").doc(functionToken);
+    const docRef = db.collection("functions").doc(firestoreId);
     const doc = await docRef.get();
     console.log("Data from executing connect: ", doc.data());
     return doc.data();
@@ -133,19 +142,38 @@ async function sourceThen(promise: any, onResolve: Function) {
   return promise.then(onResolve);
 }
 
+function testConnect(firestoreId: string) {
+  if (!dbInitialized) {
+    init();
+  }
+  console.log("Connecting to db");
+  return new Promise<Function>((resolve) => {
+    const docRef = db.collection("functions").doc(firestoreId);
+    docRef.get();
+    // console.log("Data from executing connect: ", doc.data());
+    resolve((array) => {
+      try {
+         db.collection("functions").doc(firestoreId).set({
+          args: array
+        }, {merge: true});
+        console.log("params updated for function with ID : ", firestoreId);
+      } catch(err) {
+        console.log("Error occured ", err);
+      }
+    })
+  })
+}
+
 function disconnect(s: string) {
   console.log(s);
   return 'Disconnected';
 }
 
 function makeDummyPromise() {
-  return new Promise<string>((resolve, reject) => {
-	if (true) {
-	  resolve("Yalla");
-	} else {
-	  reject(Error("how"));
-	}
-  });
+  const ans = new Promise<number>((resolve) => {
+    setTimeout(() => resolve(5), 5000);
+    });
+  return ans;
 }
 
 function testThen(promise: any) {
@@ -162,6 +190,8 @@ export default function distributed_computing() {
     makeDummyPromise,
     testThen,
     sourceThen,
-    getNumberOfParameters
+    getNumberOfParameters, 
+    createPromise, 
+    testConnect
   };
 }
