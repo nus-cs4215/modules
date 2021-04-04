@@ -53,7 +53,8 @@ function init() {
            const { args } = functionData;
            const currentFunction = sharedFunctionsName.get(functionData.function_token);
            console.log("Calling the function now");
-           const returnValue = currentFunction(args[0]);
+           console.log(args);
+           const returnValue = currentFunction(...args);
            const firestoreId = sharedFunctionsFirestore.get(functionData.function_token);
            setFunctionReturnValue(firestoreId, returnValue);
         }
@@ -116,33 +117,11 @@ async function getNumberOfParameters(functionToken: string) {
   return result;
 }
 
-
-/**
- * Connects to given firestoreId and retrieves
- * @param firestoreId
- * @returns a promise object that can only be handled using then
- */
-async function connect(firestoreId: string) {
-  if (!dbInitialized) {
-    init();
-  }
-  console.log("Connecting to db");
-  try {
-    const docRef = db.collection("functions").doc(firestoreId);
-    const doc = await docRef.get();
-    console.log("Data from executing connect: ", doc.data());
-    return doc.data();
-  } catch(err) {
-    console.log("Error occured ", err); 
-    return err; 
-  }
-}
-
-async function sourceThen(promise: any, onResolve: Function) {
+async function executeAfter(promise: any, onResolve: Function) {
   return promise.then(onResolve);
 }
 
-function testConnect(firestoreId: string) {
+function connect(firestoreId: string) {
   if (!dbInitialized) {
     init();
   }
@@ -151,14 +130,20 @@ function testConnect(firestoreId: string) {
     const docRef = db.collection("functions").doc(firestoreId);
     docRef.get();
     // console.log("Data from executing connect: ", doc.data());
-    resolve((array) => {
+    resolve(async (...array) => {
       try {
-         db.collection("functions").doc(firestoreId).set({
+         await db.collection("functions").doc(firestoreId).set({
           args: array
         }, {merge: true});
         console.log("params updated for function with ID : ", firestoreId);
+        await new Promise<string>((resolv) => {
+          setTimeout(() => {resolv('hi');}, 2000);
+        });
+        const dd = await db.collection('functions').doc(firestoreId).get();
+        return dd.data().return_value;
       } catch(err) {
         console.log("Error occured ", err);
+        return err;
       }
     })
   })
@@ -184,14 +169,13 @@ export default function distributed_computing() {
   return {
     share,
     dummy,
-    connect,
     disconnect,
     init,
     makeDummyPromise,
     testThen,
-    sourceThen,
+    executeAfter,
     getNumberOfParameters, 
     createPromise, 
-    testConnect
+    connect
   };
 }
