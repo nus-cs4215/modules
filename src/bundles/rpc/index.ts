@@ -91,14 +91,6 @@ async function share(f: Function) {
   }
 }
 
-function dummy() {
-  console.log("should this print before?");
-}
-
-function createPromise(func) {
-  return new Promise(func);
-}
-
 async function getParams(functionToken: string) {
   try {
     const docRef = await db.collection("functions").doc(functionToken).get();
@@ -133,7 +125,8 @@ function connect(firestoreId: string) {
     resolve(async (...array) => {
       try {
          await db.collection("functions").doc(firestoreId).set({
-          args: array
+          args: array,
+          run_status: true,
         }, {merge: true});
         console.log("params updated for function with ID : ", firestoreId);
         await new Promise<string>((resolv) => {
@@ -165,17 +158,15 @@ function testThen(promise: any) {
   return promise.then(() => console.log("Now then")).catch(() => console.log("Now never"));
 }
 
-export default function distributed_computing() {
+export default function rpc() {
   return {
     share,
-    dummy,
     disconnect,
     init,
     makeDummyPromise,
     testThen,
     executeAfter,
     getNumberOfParameters, 
-    createPromise, 
     connect
   };
 }
