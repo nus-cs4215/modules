@@ -2,6 +2,13 @@ import firebase from "firebase/app";
 import 'firebase/firestore';
 import uuid from 'uuid-random';
 
+/**
+ * Bundle for Source Academy RPC module
+ * @author Raivat Shah
+ * @author Sudharshan Madhavan
+ */
+
+// Global Variables
 const firebaseConfig = {};
 
 // types 
@@ -15,6 +22,10 @@ let db;
 const sharedFunctionsName = new Map();
 // <functionToken, firestoreId> - which firestore document stores a token?
 const sharedFunctionsFirestore = new Map();
+
+// =============================================================================
+// Module's Private Functions
+// =============================================================================
 
 /**
  * Sets the return value for a shared function in firestore database.
@@ -63,6 +74,44 @@ function init() {
   })
 }
 
+async function getParams(functionToken: string) {
+  try {
+    const docRef = await db.collection("functions").doc(functionToken).get();
+    return docRef.num_params;
+  } catch(err) {
+    return err;
+  }
+}
+
+async function getNumberOfParameters(functionToken: string) {
+  if (!dbInitialized) {
+    init();
+  }
+  let result = 0;
+  await getParams(functionToken).then((x) => {result = x;});
+  return result;
+}
+
+function disconnect(s: string) {
+  console.log(s);
+  return 'Disconnected';
+}
+
+function makeDummyPromise() {
+  const ans = new Promise<number>((resolve) => {
+    setTimeout(() => resolve(5), 5000);
+    });
+  return ans;
+}
+
+function testThen(promise: any) {
+  return promise.then(() => console.log("Now then")).catch(() => console.log("Now never"));
+}
+
+// =============================================================================
+// Module's Exposed Functions
+// =============================================================================
+
 /**
  * Shares the given function by creating a document for the functions collection on the firestore database.
  * @param f the function to be shared
@@ -91,28 +140,21 @@ async function share(f: Function) {
   }
 }
 
-async function getParams(functionToken: string) {
-  try {
-    const docRef = await db.collection("functions").doc(functionToken).get();
-    return docRef.num_params;
-  } catch(err) {
-    return err;
-  }
-}
-
-async function getNumberOfParameters(functionToken: string) {
-  if (!dbInitialized) {
-    init();
-  }
-  let result = 0;
-  await getParams(functionToken).then((x) => {result = x;});
-  return result;
-}
-
+/**
+ * Executes a given promise and calls given onResolve once it resolves.
+ * @param promise 
+ * @param onResolve 
+ * @returns 
+ */
 async function executeAfter(promise: any, onResolve: Function) {
   return promise.then(onResolve);
 }
 
+/**
+ * Connects to a particular document in Firestore using the given firestoreId.
+ * @param firestoreId 
+ * @returns an Asynchronous function that can be called to execute the respective remote procedure.
+ */
 function connect(firestoreId: string) {
   if (!dbInitialized) {
     init();
@@ -142,31 +184,10 @@ function connect(firestoreId: string) {
   })
 }
 
-function disconnect(s: string) {
-  console.log(s);
-  return 'Disconnected';
-}
-
-function makeDummyPromise() {
-  const ans = new Promise<number>((resolve) => {
-    setTimeout(() => resolve(5), 5000);
-    });
-  return ans;
-}
-
-function testThen(promise: any) {
-  return promise.then(() => console.log("Now then")).catch(() => console.log("Now never"));
-}
-
 export default function rpc() {
   return {
     share,
-    disconnect,
-    init,
-    makeDummyPromise,
-    testThen,
     executeAfter,
-    getNumberOfParameters, 
     connect
   };
 }
