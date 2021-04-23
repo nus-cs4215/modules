@@ -22,7 +22,6 @@ let db;
 const sharedFunctionTokens = new Map();
 // <functionToken, firestoreId> - which firestore document stores a token?
 const sharedFunctionReferences = new Map();
-
 // =============================================================================
 // Module's Private Functions
 // =============================================================================
@@ -136,35 +135,6 @@ function marshallFunction(f: Function) {
     numOfArgs: f.length,
     functionToken: createFunctionToken(f)
   };
-}
-
-/**
- * Marshalls a given value.
- * @param rawInput value to be marshalled
- * @returns marshalled value 
- */
-function marshall(rawInput: any): object {
-  
-  let marshalledData : object;
-  if (rawInput === undefined) {
-    marshalledData = marshallUndefined(rawInput);
-  } else if (rawInput === null) {
-    marshalledData = marshallNull(rawInput);
-  } else if (typeof rawInput === "number") {
-    marshalledData = marshallNumber(rawInput);
-  } else if (typeof rawInput === "string") {
-    marshalledData = marshallString(rawInput);
-  } else if (typeof rawInput === "boolean") {
-    marshalledData = marshallBoolean(rawInput);
-  } else if (typeof rawInput === "object") {
-    marshalledData = marshallArray(rawInput); 
-  } else if (typeof rawInput === "function") {
-    marshalledData = marshallFunction(rawInput);
-  } else {
-    throw Error("Invalid input");
-  }
-  
-  return marshalledData;
 }
 
 function addFunctionListener(f: unknown, functionFirestoreId: string) {
@@ -291,6 +261,39 @@ function unmarshallArray(marshalledData: any) {
   return marshalledData.array.map(unmarshall);
 }
 
+// =============================================================================
+// Module's Exposed Functions
+// =============================================================================
+
+/**
+ * Marshalls a given value.
+ * @param rawInput value to be marshalled
+ * @returns marshalled value 
+ */
+ function marshall(rawInput: any): object {
+  
+  let marshalledData : object;
+  if (rawInput === undefined) {
+    marshalledData = marshallUndefined(rawInput);
+  } else if (rawInput === null) {
+    marshalledData = marshallNull(rawInput);
+  } else if (typeof rawInput === "number") {
+    marshalledData = marshallNumber(rawInput);
+  } else if (typeof rawInput === "string") {
+    marshalledData = marshallString(rawInput);
+  } else if (typeof rawInput === "boolean") {
+    marshalledData = marshallBoolean(rawInput);
+  } else if (typeof rawInput === "object") {
+    marshalledData = marshallArray(rawInput); 
+  } else if (typeof rawInput === "function") {
+    marshalledData = marshallFunction(rawInput);
+  } else {
+    throw Error("Invalid input");
+  }
+  
+  return marshalledData;
+}
+
 /**
  * Unmarshalls a given marshalled data
  * @param marshalledData 
@@ -312,10 +315,6 @@ function unmarshall(marshalledData: object) {
   
   return unmarshalledValue;
 }
-
-// =============================================================================
-// Module's Exposed Functions
-// =============================================================================
 
 /**
  * Shares a given resource by creating its representation on firestore.

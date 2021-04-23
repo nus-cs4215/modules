@@ -3,15 +3,6 @@
 *~
 node_modules/
 build/*
-<<<<<<< HEAD
-<<<<<<< HEAD
-/package-lock.json
-coverage/
-=======
-<<<<<<< HEAD
->>>>>>> add rollup json and firebase
-=======
->>>>>>> add share function
 
 # Compiled source #
 ###################
